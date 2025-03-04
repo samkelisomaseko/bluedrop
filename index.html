@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced iOS 18.2 AirDrop-like Animation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Exo:wght@500&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f5;
+    overflow: hidden;
+    background-image: url('bluedrop_bg.jpg'); /* Replace with your image path */
+    background-size: cover; /* Cover the entire viewport */
+    background-position: center; /* Center the image */
+    background-repeat: no-repeat; /* Prevent image repetition */
+}
+
+    .widget-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 320px;
+      background: #ffffff;
+      border-radius: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* Fluid Styles */
+        .fluid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            transform: translateY(0);
+            transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: visible;
+        }
+
+        .fluid.active {
+            transform: translateY(-150px) scale(0.9);
+        }
+
+        .fluid::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 110%;
+            height: 110%;
+            background: linear-gradient(45deg, #035afc, #781be0, #dc1136, #f57c04);
+            filter: blur(30px);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: move 5s linear infinite;
+            transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease, border-radius 5s ease;
+        }
+
+        .fluid.active::before {
+            filter: blur(50px);
+            transform: translate(-50%, -150px);
+            animation: blob 5s infinite;
+            border-radius: 20%;
+        }
+
+        @keyframes move {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) rotate(180deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes blob {
+            0%,
+            100% {
+                border-radius: 50%;
+            }
+
+            50% {
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            }
+        }
+
+    .content {
+      position: relative;
+      z-index: 10;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+  .message {
+  opacity: 1;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: opacity 0.3s ease, transform 0.5s ease;
+}
+
+.success-message,
+.error-message,
+.loading-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Fonts and subtle styling for success, error, and loading messages */
+.success-message {
+  font-family: 'Orbitron', sans-serif;
+  color: #4CAF50;
+}
+
+.error-message {
+  font-family: 'Exo', sans-serif;
+  color: #F44336;
+}
+
+.loading-message {
+  font-family: 'Rajdhani', sans-serif;
+  color: #2196F3;
+  animation: loadingText 1.5s infinite ease-in-out;
+}
+
+/* Retry button redesigned for premium aesthetics */
+.retry-button {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background-color: #343A40; /* Neutral, premium color */
+  color: #ffffff;
+  border: 2px solid #4CAF50; /* Adds contrast and elegance */
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.retry-button:hover {
+  transform: translate(-50%, -2px) scale(1.02);
+  background-color: #3E4349; /* Slightly lighter on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading animation for the transferring message */
+@keyframes loadingText {
+  0% {
+    transform: translate(-50%, -50%);
+  }
+  25% {
+    transform: translate(-50%, -48%);
+  }
+  50% {
+    transform: translate(-50%, -50%);
+  }
+  75% {
+    transform: translate(-50%, -52%);
+  }
+  100% {
+    transform: translate(-50%, -50%);
+  }
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="widget-container" id="widgetContainer">
+    <div class="fluid" id="fluidBackground"></div>
+    <div class="content">
+      <div class="message" id="message">Tap to start BlueDrop</div>
+    </div>
+    <div class="success-message" id="successMessage">Transfer Complete!</div>
+    <div class="error-message" id="errorMessage">Transfer Failed</div>
+    <div class="loading-message" id="loadingMessage">Transferring...</div>
+    <div class="radial-gradient"></div>
+    <button class="retry-button" id="retryButton">Retry</button>
+  </div>
+
+  <script>
+    const container = document.getElementById('widgetContainer');
+    const fluidBackground = document.getElementById('fluidBackground');
+    const message = document.getElementById('message');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const retryButton = document.getElementById('retryButton');
+    let isAnimating = false;
+
+    const startSound = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3']
+    });
+
+    const successSound = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-magical-soft-sweep-2014.mp3']
+    });
+
+    const errorSound = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3']
+    });
+
+    function lerp(start, end, t) {
+      return start * (1 - t) + end * t;
+    }
+
+    function animateFluid() {
+      if (isAnimating) return;
+
+      gsap.to(fluidBackground, {
+        rotation: 360,
+        duration: 20,
+        repeat: -1,
+        ease: 'none',
+      });
+
+      gsap.to(fluidBackground, {
+        scale: 1.2,
+        duration: 4,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+    }
+
+    function handleMouseMove(e) {
+      if (isAnimating) return;
+
+      const rect = container.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const distanceX = (e.clientX - centerX) / 20;
+      const distanceY = (e.clientY - centerY) / 20;
+
+      gsap.to(fluidBackground, {
+        x: distanceX,
+        y: distanceY,
+        rotation: distanceX + distanceY,
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    }
+
+    function handleDeviceOrientation(e) {
+      if (isAnimating) return;
+
+      const tiltX = e.gamma / 10; // Divide by 10 to reduce sensitivity
+      const tiltY = e.beta / 10;
+
+      gsap.to(fluidBackground, {
+        x: tiltX,
+        y: tiltY,
+        rotation: tiltX + tiltY,
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    }
+
+    async function startTransfer() {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      startSound.play();
+
+      gsap.to(message, {
+        opacity: 0,
+        duration: 0.3,
+      });
+
+      gsap.to(fluidBackground, {
+        scale: 1.5,
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power2.inOut',
+      });
+
+      gsap.to(loadingMessage, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.5,
+        ease: 'back.out(1.7)',
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Simulate a random success or failure
+      const isSuccess = Math.random() > 0.2;
+
+      gsap.to(loadingMessage, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.5,
+        ease: 'power2.inOut',
+      });
+
+      if (isSuccess) {
+        successSound.play();
+        gsap.to(successMessage, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          ease: 'back.out(1.7)',
+        });
+      } else {
+        errorSound.play();
+        gsap.to(errorMessage, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          ease: 'back.out(1.7)',
+        });
+        gsap.to(retryButton, {
+          opacity: 1,
+          duration: 0.5,
+          delay: 1,
+        });
+      }
+
+      gsap.to(fluidBackground, {
+        y: '-150%',
+        scale: 2,
+        opacity: 0,
+        duration: 1.5,
+        ease: 'power2.inOut',
+      });
+
+      if (isSuccess) {
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        resetAnimation();
+      }
+    }
+
+    function resetAnimation() {
+      gsap.to([successMessage, errorMessage, retryButton], {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.5,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          gsap.set(fluidBackground, { clearProps: 'all' });
+          gsap.set(message, { opacity: 1 });
+          animateFluid();
+          isAnimating = false;
+        },
+      });
+    }
+
+    animateFluid();
+
+    container.addEventListener('click', startTransfer);
+    retryButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetAnimation();
+    });
+    document.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('deviceorientation', handleDeviceOrientation);
+  </script>
+</body>
+</html>
+
