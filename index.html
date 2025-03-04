@@ -3,36 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enhanced iOS 18.2 AirDrop-like Animation</title>
+  <title>BlueDrop File Transfer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/Draggable.min.js"></script>  <!-- GSAP Draggable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-  <!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Exo:wght@500&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Exo:wght@500&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
   <style>
-    body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background-color: #f0f0f5;
-    overflow: hidden;
-    background-image: url('bluedrop_bg.jpg'); /* Replace with your image path */
-    background-size: cover; /* Cover the entire viewport */
-    background-position: center; /* Center the image */
-    background-repeat: no-repeat; /* Prevent image repetition */
-}
+    /* General Styles */
+    :root {
+      --primary-color: #2962FF; /* A nice blue */
+      --secondary-color: #64B5F6; /* Lighter blue */
+      --accent-color: #4CAF50;  /* Green for success */
+      --error-color: #F44336; /* Red for error */
+      --neutral-color: #343A40; /* Dark gray */
+      --light-bg: #f0f0f5;
+      --font-family-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-family-orbitron: 'Orbitron', sans-serif;
+      --font-family-exo: 'Exo', sans-serif;
+      --font-family-rajdhani: 'Rajdhani', sans-serif;
+    }
 
+    body {
+      font-family: var(--font-family-main);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: var(--light-bg);
+      overflow: hidden;
+      background-image: url('bluedrop_bg.jpg'); /* Replace with your image path */
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Widget Container - Enhanced Responsiveness */
     .widget-container {
       position: fixed;
-      top: 20px;
+      top: clamp(20px, 5vh, 50px); /* Responsive top margin */
       left: 50%;
       transform: translateX(-50%);
-      width: 320px;
-      height: 320px;
+      width: clamp(280px, 80vw, 350px); /* Responsive width */
+      height: clamp(280px, 80vw, 350px); /* Responsive height */
+      max-width: 400px;
+      max-height: 400px;
       background: #ffffff;
       border-radius: 30px;
       display: flex;
@@ -43,170 +59,233 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       cursor: pointer;
       overflow: hidden;
+      transition: transform 0.3s ease;
     }
 
-    /* Fluid Styles */
-        .fluid {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            transform: translateY(0);
-            transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: visible;
-        }
+    .widget-container:hover {
+      transform: translateX(-50%) scale(1.03); /* Subtle hover effect */
+    }
 
-        .fluid.active {
-            transform: translateY(-150px) scale(0.9);
-        }
+    /* Fluid Background */
+    .fluid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      transform: translateY(0);
+      transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: visible;
+    }
 
-        .fluid::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 110%;
-            height: 110%;
-            background: linear-gradient(45deg, #035afc, #781be0, #dc1136, #f57c04);
-            filter: blur(30px);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: move 5s linear infinite;
-            transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease, border-radius 5s ease;
-        }
+    .fluid.active {
+      transform: translateY(-150px) scale(0.9);
+    }
 
-        .fluid.active::before {
-            filter: blur(50px);
-            transform: translate(-50%, -150px);
-            animation: blob 5s infinite;
-            border-radius: 20%;
-        }
+    .fluid::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 110%;
+      height: 110%;
+      background: linear-gradient(45deg, #035afc, #781be0, #dc1136, #f57c04);
+      filter: blur(30px);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: move 5s linear infinite;
+      transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease, border-radius 5s ease;
+    }
 
-        @keyframes move {
-            0% {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
+    .fluid.active::before {
+      filter: blur(50px);
+      transform: translate(-50%, -150px);
+      animation: blob 5s infinite;
+      border-radius: 20%;
+    }
 
-            50% {
-                transform: translate(-50%, -50%) rotate(180deg);
-            }
+    @keyframes move {
+      0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+      50% {
+        transform: translate(-50%, -50%) rotate(180deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
 
-            100% {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
+    @keyframes blob {
+      0%,
+      100% {
+        border-radius: 50%;
+      }
+      50% {
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+      }
+    }
 
-        @keyframes blob {
-            0%,
-            100% {
-                border-radius: 50%;
-            }
-
-            50% {
-                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-            }
-        }
-
+    /* Content Area */
     .content {
       position: relative;
       z-index: 10;
       color: #ffffff;
-      font-size: 24px;
+      font-size: clamp(1.2rem, 3vw, 1.5rem); /* Responsive font size */
       font-weight: bold;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
     }
 
-  .message {
-  opacity: 1;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 20px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  transition: opacity 0.3s ease, transform 0.5s ease;
-}
+    .message {
+      opacity: 1;
+      font-family: var(--font-family-rajdhani);
+      font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: opacity 0.3s ease, transform 0.5s ease;
+    }
 
-.success-message,
-.error-message,
-.loading-message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 28px;
-  font-weight: bold;
-  color: #ffffff;
-  opacity: 0;
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
+    /* Message Styles (Success, Error, Loading) */
+    .success-message,
+    .error-message,
+    .loading-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(1.3rem, 4vw, 1.7rem); /* Responsive font size */
+      font-weight: bold;
+      color: #ffffff;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
 
-/* Fonts and subtle styling for success, error, and loading messages */
-.success-message {
-  font-family: 'Orbitron', sans-serif;
-  color: #4CAF50;
-}
+    .success-message {
+      font-family: var(--font-family-orbitron);
+      color: var(--accent-color);
+    }
 
-.error-message {
-  font-family: 'Exo', sans-serif;
-  color: #F44336;
-}
+    .error-message {
+      font-family: var(--font-family-exo);
+      color: var(--error-color);
+    }
 
-.loading-message {
-  font-family: 'Rajdhani', sans-serif;
-  color: #2196F3;
-  animation: loadingText 1.5s infinite ease-in-out;
-}
+    .loading-message {
+      font-family: var(--font-family-rajdhani);
+      color: var(--primary-color);
+      animation: loadingText 1.5s infinite ease-in-out;
+    }
 
-/* Retry button redesigned for premium aesthetics */
-.retry-button {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 24px;
-  background-color: #343A40; /* Neutral, premium color */
-  color: #ffffff;
-  border: 2px solid #4CAF50; /* Adds contrast and elegance */
-  border-radius: 10px;
-  font-size: 16px;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  opacity: 0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-}
+    @keyframes loadingText {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+    }
 
-.retry-button:hover {
-  transform: translate(-50%, -2px) scale(1.02);
-  background-color: #3E4349; /* Slightly lighter on hover */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-}
+    /* Retry Button */
+    .retry-button {
+      position: absolute;
+      bottom: clamp(10px, 4vh, 20px); /* Responsive bottom margin */
+      left: 50%;
+      transform: translateX(-50%);
+      padding: clamp(8px, 3vw, 12px) clamp(16px, 5vw, 24px); /* Responsive padding */
+      background-color: var(--neutral-color);
+      color: #ffffff;
+      border: 2px solid var(--accent-color);
+      border-radius: 10px;
+      font-size: clamp(0.8rem, 2vw, 1rem); /* Responsive font size */
+      font-family: var(--font-family-rajdhani);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      opacity: 0;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    }
 
-/* Loading animation for the transferring message */
-@keyframes loadingText {
-  0% {
-    transform: translate(-50%, -50%);
-  }
-  25% {
-    transform: translate(-50%, -48%);
-  }
-  50% {
-    transform: translate(-50%, -50%);
-  }
-  75% {
-    transform: translate(-50%, -52%);
-  }
-  100% {
-    transform: translate(-50%, -50%);
-  }
-}
+    .retry-button:hover {
+      transform: translate(-50%, -2px) scale(1.02);
+      background-color: #3E4349;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
 
+    /* Progress Bar */
+    .progress-bar-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 10px; /* Thin progress bar */
+      background-color: rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
 
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background-color: var(--primary-color);
+      transition: width 0.3s ease;
+    }
+
+    /* File List - NEW */
+    .file-list {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 60px; /* Leave space for the progress bar and messages */
+      overflow-y: auto; /* Scroll if needed */
+      z-index: 11;  /* Ensure it's above the fluid background */
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent background */
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--font-family-rajdhani);
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .file-list ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .file-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .file-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* Media Queries - Enhance Responsiveness Further */
+    @media (max-width: 600px) {
+      .widget-container {
+        border-radius: 20px;
+      }
+
+      .retry-button {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+      }
+
+      .success-message,
+      .error-message,
+      .loading-message {
+        font-size: 1.4rem;
+      }
+    }
+
+    @media (max-height: 500px) {
+      .widget-container {
+        top: 10px; /* Adjust top position on smaller screens */
+      }
+    }
   </style>
 </head>
 <body>
@@ -218,8 +297,19 @@
     <div class="success-message" id="successMessage">Transfer Complete!</div>
     <div class="error-message" id="errorMessage">Transfer Failed</div>
     <div class="loading-message" id="loadingMessage">Transferring...</div>
-    <div class="radial-gradient"></div>
     <button class="retry-button" id="retryButton">Retry</button>
+
+    <!-- Progress Bar Container -->
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- File List -->
+    <div class="file-list" id="fileList">
+      <ul>
+        <!-- Files will be added here dynamically -->
+      </ul>
+    </div>
   </div>
 
   <script>
@@ -230,7 +320,12 @@
     const errorMessage = document.getElementById('errorMessage');
     const loadingMessage = document.getElementById('loadingMessage');
     const retryButton = document.getElementById('retryButton');
+    const progressBar = document.getElementById('progressBar');
+    const fileList = document.getElementById('fileList'); // NEW
     let isAnimating = false;
+    let transferProgress = 0;
+    let filesToTransfer = []; // Array to hold file names
+    let filesSent = 0;
 
     const startSound = new Howl({
       src: ['https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3']
@@ -243,10 +338,6 @@
     const errorSound = new Howl({
       src: ['https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3']
     });
-
-    function lerp(start, end, t) {
-      return start * (1 - t) + end * t;
-    }
 
     function animateFluid() {
       if (isAnimating) return;
@@ -301,93 +392,170 @@
       });
     }
 
+    //Function for the file Transfer list
+    function updateFileList() {
+      let fileListHTML = '<ul>';
+      filesToTransfer.forEach(file => {
+        fileListHTML += `<li>${file}</li>`;
+      });
+      fileListHTML += '</ul>';
+      fileList.innerHTML = fileListHTML;
+    }
+
     async function startTransfer() {
-      if (isAnimating) return;
-      isAnimating = true;
+        if (isAnimating) return;
+        isAnimating = true;
 
-      startSound.play();
+        // Simulate file selection (replace with actual file selection logic)
+        filesToTransfer = ['image1.jpg', 'document.pdf', 'audio.mp3'];
+        filesSent = 0;
+        updateFileList();
 
-      gsap.to(message, {
-        opacity: 0,
+        startSound.play();
+
+        // GSAP Timeline for Animation Sequencing
+        const tl = gsap.timeline();
+
+        tl.to(message, {
+            opacity: 0,
+            duration: 0.3,
+        })
+          .to(fluidBackground, {
+            scale: 1.5,
+            opacity: 1,
+            duration: 0.5,
+            ease: 'power2.inOut',
+          }, "<") // "<" means at the same time as the previous animation
+          .to(fileList, {  // Show file list with a fade-in
+            opacity: 1,
+            duration: 0.5,
+          }, "<0.2") // A slight delay after the fluid animation
+          .to(loadingMessage, {
+            opacity: 1,
+            scale: 1,
+            duration: 0.5,
+            ease: 'back.out(1.7)',
+          }, "+=0.2");  // A small delay after the file list appears
+
+        // Simulate file transfer process
+        const totalFiles = filesToTransfer.length;
+        const transferInterval = 1500; // Simulate transfer time per file (milliseconds)
+
+        for (let i = 0; i < totalFiles; i++) {
+            await new Promise(resolve => setTimeout(resolve, transferInterval));
+
+            filesSent++;
+            transferProgress = (filesSent / totalFiles) * 100;
+            updateProgressBar(transferProgress);
+
+            // Update file list with visual feedback (e.g., checkmark or progress)
+            updateFileListItem(i, 'success'); // Simulate success for now
+        }
+
+
+        tl.to(loadingMessage, {
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.5,
+            ease: 'power2.inOut',
+        })
+          .to(fileList, { // Fade out the file list
+              opacity: 0,
+              duration: 0.5,
+          }, "<") // at the same time as loading message fade out
+          .to(fluidBackground, {
+            y: '-150%',
+            scale: 2,
+            opacity: 0,
+            duration: 1.5,
+            ease: 'power2.inOut',
+            onComplete: () => {
+              // Simulate a random success or failure
+              const isSuccess = Math.random() > 0.2;
+
+                if (isSuccess) {
+                    successSound.play();
+                    gsap.to(successMessage, {
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.5,
+                        ease: 'back.out(1.7)',
+                    });
+                } else {
+                    errorSound.play();
+                    gsap.to(errorMessage, {
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.5,
+                        ease: 'back.out(1.7)',
+                    });
+                    gsap.to(retryButton, {
+                        opacity: 1,
+                        duration: 0.5,
+                        delay: 0.5,
+                    });
+                }
+            },
+        }, "+=0.5");  // Add a small delay before transitioning
+
+        tl.then(() => {
+            // Wait for a short period before resetting
+            if (filesSent === totalFiles) {
+                 setTimeout(() => {
+                    resetAnimation();
+                }, 2000);  // Wait 2 seconds before resetting
+            }
+        });
+
+    }
+
+    // Function to update the file list item with status
+    function updateFileListItem(index, status) {
+        const listItem = fileList.querySelector(`ul li:nth-child(${index + 1})`);
+        if (listItem) {
+            let statusIcon = '';
+            switch (status) {
+                case 'success':
+                    statusIcon = '&#10004;'; // Checkmark
+                    break;
+                case 'error':
+                    statusIcon = '&#10060;'; // X Mark
+                    break;
+                case 'progress':
+                    statusIcon = '...';      // Ellipsis
+                    break;
+                default:
+                    statusIcon = '';
+            }
+            listItem.innerHTML = `${filesToTransfer[index]} ${statusIcon}`;
+        }
+    }
+
+    function updateProgressBar(progress) {
+      gsap.to(progressBar, {
+        width: `${progress}%`,
         duration: 0.3,
+        ease: 'power3.out',
       });
-
-      gsap.to(fluidBackground, {
-        scale: 1.5,
-        opacity: 1,
-        duration: 0.5,
-        ease: 'power2.inOut',
-      });
-
-      gsap.to(loadingMessage, {
-        opacity: 1,
-        scale: 1,
-        duration: 0.5,
-        ease: 'back.out(1.7)',
-      });
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Simulate a random success or failure
-      const isSuccess = Math.random() > 0.2;
-
-      gsap.to(loadingMessage, {
-        opacity: 0,
-        scale: 0.8,
-        duration: 0.5,
-        ease: 'power2.inOut',
-      });
-
-      if (isSuccess) {
-        successSound.play();
-        gsap.to(successMessage, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.5,
-          ease: 'back.out(1.7)',
-        });
-      } else {
-        errorSound.play();
-        gsap.to(errorMessage, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.5,
-          ease: 'back.out(1.7)',
-        });
-        gsap.to(retryButton, {
-          opacity: 1,
-          duration: 0.5,
-          delay: 1,
-        });
-      }
-
-      gsap.to(fluidBackground, {
-        y: '-150%',
-        scale: 2,
-        opacity: 0,
-        duration: 1.5,
-        ease: 'power2.inOut',
-      });
-
-      if (isSuccess) {
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        resetAnimation();
-      }
     }
 
     function resetAnimation() {
-      gsap.to([successMessage, errorMessage, retryButton], {
-        opacity: 0,
-        scale: 0.8,
-        duration: 0.5,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          gsap.set(fluidBackground, { clearProps: 'all' });
-          gsap.set(message, { opacity: 1 });
-          animateFluid();
-          isAnimating = false;
-        },
-      });
+        gsap.to([successMessage, errorMessage, retryButton], {
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.5,
+            ease: 'power2.inOut',
+            onComplete: () => {
+                gsap.set(fluidBackground, { clearProps: 'all' });
+                gsap.set(message, { opacity: 1 });
+                gsap.set(progressBar, { width: '0%' }); // Reset progress bar
+                gsap.set(fileList, {opacity: 0});
+                filesToTransfer = [];
+                updateFileList();
+                animateFluid();
+                isAnimating = false;
+            },
+        });
     }
 
     animateFluid();
@@ -399,7 +567,7 @@
     });
     document.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('deviceorientation', handleDeviceOrientation);
+
   </script>
 </body>
 </html>
-
