@@ -1,573 +1,1059 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BlueDrop File Transfer</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/Draggable.min.js"></script>  <!-- GSAP Draggable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Exo:wght@500&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
-  <style>
-    /* General Styles */
-    :root {
-      --primary-color: #2962FF; /* A nice blue */
-      --secondary-color: #64B5F6; /* Lighter blue */
-      --accent-color: #4CAF50;  /* Green for success */
-      --error-color: #F44336; /* Red for error */
-      --neutral-color: #343A40; /* Dark gray */
-      --light-bg: #f0f0f5;
-      --font-family-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      --font-family-orbitron: 'Orbitron', sans-serif;
-      --font-family-exo: 'Exo', sans-serif;
-      --font-family-rajdhani: 'Rajdhani', sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0, viewport-fit: cover">
+    <title>BlueDrop - Effortless File Transfers</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@400;700&family=Russo+One&family=Bebas+Neue&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
+        integrity="sha512-E8QSvWZ0eCLGk4km3hxSsNmGWbLtSCSUcewSTCcpyAfQKwiOp/oyuP3m18RReF9SvNKjC4JEjz+iCz2P+pIiuw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    body {
-      font-family: var(--font-family-main);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background-color: var(--light-bg);
-      overflow: hidden;
-      background-image: url('bluedrop_bg.jpg'); /* Replace with your image path */
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
+    <!-- WebRTC Libraries - Simple Peer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"
+        integrity="sha512-IzJ2KzGgqR19V00jQ2R4w9G010Y2y4FjS7jJ+QO1w7w9J4+t2w9X70l+eXvL9G2C5K/5c7Vn3j839tQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    /* Widget Container - Enhanced Responsiveness */
-    .widget-container {
-      position: fixed;
-      top: clamp(20px, 5vh, 50px); /* Responsive top margin */
-      left: 50%;
-      transform: translateX(-50%);
-      width: clamp(280px, 80vw, 350px); /* Responsive width */
-      height: clamp(280px, 80vw, 350px); /* Responsive height */
-      max-width: 400px;
-      max-height: 400px;
-      background: #ffffff;
-      border-radius: 30px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      overflow: hidden;
-      transition: transform 0.3s ease;
-    }
 
-    .widget-container:hover {
-      transform: translateX(-50%) scale(1.03); /* Subtle hover effect */
-    }
+    <style>
+        /* iOS 18.2 / iPhone 16 Pro Max Futuristic Fonts */
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('https://fonts.cdnfonts.com/s/93781/SF-Pro-Display-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
 
-    /* Fluid Background */
-    .fluid {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-      transform: translateY(0);
-      transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: visible;
-    }
+        /* Font Stack */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', 'Orbitron', 'Exo 2', 'Russo One', 'Bebas Neue', -apple-system,
+                BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+        }
 
-    .fluid.active {
-      transform: translateY(-150px) scale(0.9);
-    }
+        body {
+            background: linear-gradient(135deg, #0d1117, #1e2a47);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: clamp(10px, 2vw, 20px);
+            overscroll-behavior: none;
+        }
 
-    .fluid::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 110%;
-      height: 110%;
-      background: linear-gradient(45deg, #035afc, #781be0, #dc1136, #f57c04);
-      filter: blur(30px);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      animation: move 5s linear infinite;
-      transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease, border-radius 5s ease;
-    }
+        /* Base Container Styles */
+        .container,
+        .file-select-container,
+        .receive-container,
+        .transfer-popup {
+            text-align: center;
+            padding: clamp(20px, 4vw, 40px);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: clamp(300px, 40vw, 500px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            margin-bottom: clamp(20px, 4vw, 40px);
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease-in-out;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+        }
 
-    .fluid.active::before {
-      filter: blur(50px);
-      transform: translate(-50%, -150px);
-      animation: blob 5s infinite;
-      border-radius: 20%;
-    }
+        .container:not(.active),
+        .file-select-container:not(.active),
+        .receive-container:not(.active),
+        .transfer-popup:not(.active) {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+        }
 
-    @keyframes move {
-      0% {
-        transform: translate(-50%, -50%) rotate(0deg);
-      }
-      50% {
-        transform: translate(-50%, -50%) rotate(180deg);
-      }
-      100% {
-        transform: translate(-50%, -50%) rotate(360deg);
-      }
-    }
+        .container.active,
+        .file-select-container.active,
+        .receive-container.active,
+        .transfer-popup.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-    @keyframes blob {
-      0%,
-      100% {
-        border-radius: 50%;
-      }
-      50% {
-        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-      }
-    }
+        /* Typography */
+        h1 {
+            font-size: clamp(32px, 5vw, 50px);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
 
-    /* Content Area */
-    .content {
-      position: relative;
-      z-index: 10;
-      color: #ffffff;
-      font-size: clamp(1.2rem, 3vw, 1.5rem); /* Responsive font size */
-      font-weight: bold;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      transition: all 0.3s ease;
-    }
+        h2 {
+            font-size: clamp(18px, 2vw, 24px);
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.3px;
+            margin-bottom: 12px;
+        }
 
-    .message {
-      opacity: 1;
-      font-family: var(--font-family-rajdhani);
-      font-size: clamp(0.9rem, 2.5vw, 1.2rem);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      transition: opacity 0.3s ease, transform 0.5s ease;
-    }
+        h3 {
+            color: #ffffff;
+        }
 
-    /* Message Styles (Success, Error, Loading) */
-    .success-message,
-    .error-message,
-    .loading-message {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: clamp(1.3rem, 4vw, 1.7rem); /* Responsive font size */
-      font-weight: bold;
-      color: #ffffff;
-      opacity: 0;
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
+        p {
+            font-size: clamp(16px, 2vw, 22px);
+            font-family: 'Russo One', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: clamp(15px, 3vw, 25px);
+            line-height: 1.5;
+        }
 
-    .success-message {
-      font-family: var(--font-family-orbitron);
-      color: var(--accent-color);
-    }
+        /* Buttons */
+        .button {
+            display: block;
+            width: 100%;
+            padding: clamp(12px, 2.5vw, 18px);
+            margin: 10px 0;
+            border-radius: 14px;
+            font-size: clamp(18px, 2vw, 24px);
+            font-family: 'Bebas Neue', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            color: white;
+            background: linear-gradient(145deg, #3a69d4, #1f4bd6);
+            box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(0, 0, 0, 0.3),
+                inset 0px 0px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform, box-shadow;
+            transform: translate3d(0, 0, 0);
+        }
 
-    .error-message {
-      font-family: var(--font-family-exo);
-      color: var(--error-color);
-    }
+        .button:hover {
+            background: linear-gradient(145deg, #4471e5, #1c47c1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), inset 0px 0px 10px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
 
-    .loading-message {
-      font-family: var(--font-family-rajdhani);
-      color: var(--primary-color);
-      animation: loadingText 1.5s infinite ease-in-out;
-    }
+        .button:active {
+            transform: scale(0.98);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
 
-    @keyframes loadingText {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.05); }
-    }
+        .button-receive {
+            background: linear-gradient(145deg, #7c6bff, #5a4ef9);
+        }
 
-    /* Retry Button */
-    .retry-button {
-      position: absolute;
-      bottom: clamp(10px, 4vh, 20px); /* Responsive bottom margin */
-      left: 50%;
-      transform: translateX(-50%);
-      padding: clamp(8px, 3vw, 12px) clamp(16px, 5vw, 24px); /* Responsive padding */
-      background-color: var(--neutral-color);
-      color: #ffffff;
-      border: 2px solid var(--accent-color);
-      border-radius: 10px;
-      font-size: clamp(0.8rem, 2vw, 1rem); /* Responsive font size */
-      font-family: var(--font-family-rajdhani);
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-      opacity: 0;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-    }
+        .button-receive:hover {
+            background: linear-gradient(145deg, #8671ff, #4a3ff9);
+        }
 
-    .retry-button:hover {
-      transform: translate(-50%, -2px) scale(1.02);
-      background-color: #3E4349;
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-    }
+        /* File Selection Container Styles */
+        .file-select-container {
+            overflow: hidden;
+            /* Ensure no content overflows */
+        }
 
-    /* Progress Bar */
-    .progress-bar-container {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 10px; /* Thin progress bar */
-      background-color: rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
+        .file-select-container h3 {
+            font-size: clamp(24px, 3vw, 30px);
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 15px;
+        }
 
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      background-color: var(--primary-color);
-      transition: width 0.3s ease;
-    }
+        .file-select-container input[type="file"] {
+            display: none;
+        }
 
-    /* File List - NEW */
-    .file-list {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      bottom: 60px; /* Leave space for the progress bar and messages */
-      overflow-y: auto; /* Scroll if needed */
-      z-index: 11;  /* Ensure it's above the fluid background */
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent background */
-      border-radius: 10px;
-      color: #fff;
-      font-family: var(--font-family-rajdhani);
-      font-size: 14px;
-      text-align: left;
-    }
+        .file-select-container label {
+            background: linear-gradient(145deg, #7c6bff, #5a4ef9);
+            padding: clamp(10px, 2vw, 14px);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(16px, 1.8vw, 20px);
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            will-change: background;
+            transform: translate3d(0, 0, 0);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Spring-like transition */
+        }
 
-    .file-list ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+        .file-select-container label:hover {
+            background: linear-gradient(145deg, #8671ff, #4a3ff9);
+            transform: scale(1.05);
+            /* Slight scale increase on hover */
+        }
 
-    .file-list li {
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
+        .file-list {
+            text-align: left;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            /* Make file list scrollable if it overflows */
+            max-height: 200px;
+            /* Set a maximum height for the file list */
+            padding-right: 10px;
+            /* Add padding to prevent scrollbar from overlapping */
+        }
 
-    .file-list li:last-child {
-      border-bottom: none;
-    }
+        .file-list li {
+            font-size: clamp(14px, 1.6vw, 18px);
+            font-family: 'Russo One', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            will-change: color, transform;
+            transform: translate3d(0, 0, 0);
+            padding: 8px;
+            border-radius: 8px;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s ease;
+            /* Add transition */
+        }
 
-    /* Media Queries - Enhance Responsiveness Further */
-    @media (max-width: 600px) {
-      .widget-container {
-        border-radius: 20px;
-      }
+        .file-list li:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            /* Add a subtle background color on hover */
+            transform: translateY(-2px);
+            /* Lift the item slightly on hover */
+        }
 
-      .retry-button {
-        font-size: 0.9rem;
-        padding: 10px 20px;
-      }
 
-      .success-message,
-      .error-message,
-      .loading-message {
-        font-size: 1.4rem;
-      }
-    }
+        .file-list li .file-icon {
+            margin-right: 5px;
+        }
 
-    @media (max-height: 500px) {
-      .widget-container {
-        top: 10px; /* Adjust top position on smaller screens */
-      }
-    }
-  </style>
+        .file-list li .remove-file {
+            cursor: pointer;
+            color: #dc143c;
+            transition: color 0.3s ease;
+            /* Add transition for remove file icon */
+        }
+
+        .file-list li .remove-file:hover {
+            color: #ff4d6a;
+        }
+
+        .file-select-container button {
+            background: linear-gradient(145deg, #3a69d4, #1f4bd6);
+            padding: clamp(10px, 2vw, 14px);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(16px, 1.8vw, 20px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Spring-like transition */
+        }
+
+        .file-select-container button:hover {
+            background: linear-gradient(145deg, #4471e5, #1c47c1);
+            transform: scale(1.03);
+        }
+
+        /* Receive Container Styles */
+        .receive-container h3 {
+            font-size: clamp(24px, 3vw, 30px);
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 15px;
+        }
+
+        .receive-container p {
+            font-size: clamp(16px, 2vw, 22px);
+            font-family: 'Russo One', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: clamp(15px, 3vw, 25px);
+            line-height: 1.5;
+        }
+
+        .receive-container button {
+            background: linear-gradient(145deg, #7c6bff, #5a4ef9);
+            padding: clamp(10px, 2vw, 14px);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(16px, 1.8vw, 20px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .receive-container button:hover {
+            background: linear-gradient(145deg, #8671ff, #4a3ff9);
+        }
+
+        /* File Transfer Popup Styles */
+        .transfer-popup {
+            overflow: hidden;
+        }
+
+        .transfer-popup h3 {
+            font-size: clamp(24px, 3vw, 30px);
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3a69d4, #7c6bff);
+            border-radius: 5px;
+            transition: width 0.2s ease-out;
+            will-change: width;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .transfer-status {
+            font-size: clamp(16px, 2vw, 20px);
+            font-family: 'Russo One', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+        }
+
+        #cancelBtn {
+            background: linear-gradient(145deg, #7c6bff, #5a4ef9);
+            padding: clamp(10px, 2vw, 14px);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(16px, 1.8vw, 20px);
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Spring-like transition */
+        }
+
+        #cancelBtn:hover {
+            background: linear-gradient(145deg, #8671ff, #4a3ff9);
+            transform: scale(1.03);
+        }
+
+        #transferringList {
+            text-align: left;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 150px;
+            padding-right: 10px;
+        }
+
+        #transferringList li {
+            font-size: clamp(14px, 1.6vw, 18px);
+            font-family: 'Russo One', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            will-change: color, transform;
+            transform: translate3d(0, 0, 0);
+            padding: 8px;
+            border-radius: 8px;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s ease;
+        }
+
+        #transferringList li:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        /* Incoming File Alert Styles */
+        .incoming-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+            padding: clamp(10px, 2vw, 15px);
+            border-radius: 8px;
+            z-index: 1001;
+            font-family: 'SF Pro Display', sans-serif;
+            font-size: clamp(16px, 1.8vw, 18px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .incoming-alert.active {
+            display: block;
+            animation: slideDown 0.5s ease-out, fadeOut 3s forwards 3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* ✅ Fully Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container,
+            .file-select-container,
+            .receive-container,
+            .transfer-popup {
+                max-width: 95%;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            p {
+                font-size: 18px;
+            }
+
+            .button {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            .button {
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div class="widget-container" id="widgetContainer">
-    <div class="fluid" id="fluidBackground"></div>
-    <div class="content">
-      <div class="message" id="message">Tap to start BlueDrop</div>
-    </div>
-    <div class="success-message" id="successMessage">Transfer Complete!</div>
-    <div class="error-message" id="errorMessage">Transfer Failed</div>
-    <div class="loading-message" id="loadingMessage">Transferring...</div>
-    <button class="retry-button" id="retryButton">Retry</button>
 
-    <!-- Progress Bar Container -->
-    <div class="progress-bar-container">
-      <div class="progress-bar" id="progressBar"></div>
+    <div class="container active" id="mainContainer">
+        <h1>BlueDrop</h1>
+        <h2>Effortless File Transfers</h2>
+        <p>Share files instantly with just a tap. Secure, fast, and designed for a seamless experience.</p>
+        <button class="button" id="sendBtn" onclick="openFileSelect()">
+            <i class="fas fa-upload"></i> Send Files
+        </button>
+        <button class="button button-receive" id="receiveBtn" onclick="openReceiveContainer()">
+            <i class="fas fa-download"></i> Receive Files
+        </button>
     </div>
 
-    <!-- File List -->
-    <div class="file-list" id="fileList">
-      <ul>
-        <!-- Files will be added here dynamically -->
-      </ul>
+    <!-- File Selection Container -->
+    <div class="file-select-container" id="fileSelectContainer">
+        <h3>Select Files to Send</h3>
+        <input type="file" id="fileInput" multiple onchange="handleFileSelection(event)">
+        <label for="fileInput">
+            <i class="fas fa-plus-circle"></i> Choose Files
+        </label>
+        <ul class="file-list" id="fileList"></ul>
+        <button onclick="startSending()">
+            <i class="fas fa-paper-plane"></i> Send Selected Files
+        </button>
     </div>
-  </div>
 
-  <script>
-    const container = document.getElementById('widgetContainer');
-    const fluidBackground = document.getElementById('fluidBackground');
-    const message = document.getElementById('message');
-    const successMessage = document.getElementById('successMessage');
-    const errorMessage = document.getElementById('errorMessage');
-    const loadingMessage = document.getElementById('loadingMessage');
-    const retryButton = document.getElementById('retryButton');
-    const progressBar = document.getElementById('progressBar');
-    const fileList = document.getElementById('fileList'); // NEW
-    let isAnimating = false;
-    let transferProgress = 0;
-    let filesToTransfer = []; // Array to hold file names
-    let filesSent = 0;
+    <!-- Receive Container -->
+    <div class="receive-container" id="receiveContainer">
+        <h3>Incoming Transfer</h3>
+        <p>Someone wants to share files with you.</p>
 
-    const startSound = new Howl({
-      src: ['https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3']
-    });
+        <div
+            style="background-color: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: flex-start;">
+            <i class="fas fa-file fa-3x" style="margin-right: 10px; color: #fff;"></i>
+            <div style="flex: 1; text-align: left;">
+                <div style="font-size: 18px; color: #fff;" id="incomingFileName"></div>
+                <div style="font-size: 14px; color: #eee;" id="incomingFileSize"></div>
+            </div>
+        </div>
 
-    const successSound = new Howl({
-      src: ['https://assets.mixkit.co/sfx/preview/mixkit-magical-soft-sweep-2014.mp3']
-    });
+        <div style="display: flex; justify-content: space-around;">
+            <button
+                style="background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px;"
+                onclick="acceptTransfer()">Accept</button>
+            <button
+                style="background-color: rgb(255, 0, 0) !important; color: rgb(255, 255, 255) !important; border: none !important; padding: 10px 20px !important; border-radius: 8px !important; cursor: pointer !important; font-size: 16px !important;"
+                onclick="declineTransfer()">Decline</button>
+        </div>
+    </div>
 
-    const errorSound = new Howl({
-      src: ['https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3']
-    });
+    <!-- File Transfer Popup -->
+    <div class="transfer-popup" id="transferPopup">
+        <h3>Transferring Files...</h3>
+        <ul id="transferringList"></ul>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="transfer-status" id="transferStatus"></p>
+        <button id="cancelBtn" onclick="cancelTransfer()">Cancel</button>
+    </div>
 
-    function animateFluid() {
-      if (isAnimating) return;
+    <!-- Incoming File Alert -->
+    <div class="incoming-alert" id="incomingAlert">
+        Incoming File Transfer!
+    </div>
 
-      gsap.to(fluidBackground, {
-        rotation: 360,
-        duration: 20,
-        repeat: -1,
-        ease: 'none',
-      });
+    <!-- GSAP Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.1/gsap.min.js"></script>
 
-      gsap.to(fluidBackground, {
-        scale: 1.2,
-        duration: 4,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-      });
-    }
+    <script>
+        const mainContainer = document.getElementById("mainContainer");
+        const sendBtn = document.getElementById("sendBtn");
+        const receiveBtn = document.getElementById("receiveBtn");
+        const fileSelectContainer = document.getElementById("fileSelectContainer");
+        const receiveContainer = document.getElementById("receiveContainer");
+        const transferPopup = document.getElementById("transferPopup");
+        const progressBar = document.getElementById("progressBar");
+        const transferStatus = document.getElementById("transferStatus");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const incomingAlert = document.getElementById("incomingAlert");
+        const fileInput = document.getElementById("fileInput");
+        const fileList = document.getElementById("fileList");
+        const transferringList = document.getElementById("transferringList");
+        const incomingFileNameDisplay = document.getElementById("incomingFileName");
+        const incomingFileSizeDisplay = document.getElementById("incomingFileSize");
 
-    function handleMouseMove(e) {
-      if (isAnimating) return;
+        let selectedFiles = [];
+        let intervals = [];
+        let transferOngoing = false;
 
-      const rect = container.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+        // WebRTC variables
+        let peer;
+        let initiator = false;
+        let receivedFileData = [];
+        let incomingFileMeta = null;
 
-      const distanceX = (e.clientX - centerX) / 20;
-      const distanceY = (e.clientY - centerY) / 20;
 
-      gsap.to(fluidBackground, {
-        x: distanceX,
-        y: distanceY,
-        rotation: distanceX + distanceY,
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-    }
+        // IndexedDB setup
+        let db;
+        const dbName = "BlueDropDB";
+        const objectStoreName = "files";
 
-    function handleDeviceOrientation(e) {
-      if (isAnimating) return;
+        const request = indexedDB.open(dbName, 1);
 
-      const tiltX = e.gamma / 10; // Divide by 10 to reduce sensitivity
-      const tiltY = e.beta / 10;
+        request.onerror = function (event) {
+            console.error("Database error: " + event.target.errorCode);
+        };
 
-      gsap.to(fluidBackground, {
-        x: tiltX,
-        y: tiltY,
-        rotation: tiltX + tiltY,
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-    }
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+            const objectStore = db.createObjectStore(objectStoreName, { keyPath: "name" });
+            objectStore.createIndex("category", "category", { unique: false }); // Example index
+        };
 
-    //Function for the file Transfer list
-    function updateFileList() {
-      let fileListHTML = '<ul>';
-      filesToTransfer.forEach(file => {
-        fileListHTML += `<li>${file}</li>`;
-      });
-      fileListHTML += '</ul>';
-      fileList.innerHTML = fileListHTML;
-    }
+        request.onsuccess = function (event) {
+            db = event.target.result;
+        };
 
-    async function startTransfer() {
-        if (isAnimating) return;
-        isAnimating = true;
+        // Function to store file in IndexedDB
+        function storeFileInIndexedDB(file, category = 'Uncategorized') {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([objectStoreName], "readwrite");
+                const objectStore = transaction.objectStore(objectStoreName);
 
-        // Simulate file selection (replace with actual file selection logic)
-        filesToTransfer = ['image1.jpg', 'document.pdf', 'audio.mp3'];
-        filesSent = 0;
-        updateFileList();
+                const fileData = {
+                    name: file.name,
+                    data: file, // Consider storing only metadata if file is too large
+                    category: category,
+                    timestamp: Date.now()
+                };
 
-        startSound.play();
+                const request = objectStore.add(fileData);
 
-        // GSAP Timeline for Animation Sequencing
-        const tl = gsap.timeline();
+                request.onsuccess = () => {
+                    resolve();
+                };
 
-        tl.to(message, {
-            opacity: 0,
-            duration: 0.3,
-        })
-          .to(fluidBackground, {
-            scale: 1.5,
-            opacity: 1,
-            duration: 0.5,
-            ease: 'power2.inOut',
-          }, "<") // "<" means at the same time as the previous animation
-          .to(fileList, {  // Show file list with a fade-in
-            opacity: 1,
-            duration: 0.5,
-          }, "<0.2") // A slight delay after the fluid animation
-          .to(loadingMessage, {
-            opacity: 1,
-            scale: 1,
-            duration: 0.5,
-            ease: 'back.out(1.7)',
-          }, "+=0.2");  // A small delay after the file list appears
-
-        // Simulate file transfer process
-        const totalFiles = filesToTransfer.length;
-        const transferInterval = 1500; // Simulate transfer time per file (milliseconds)
-
-        for (let i = 0; i < totalFiles; i++) {
-            await new Promise(resolve => setTimeout(resolve, transferInterval));
-
-            filesSent++;
-            transferProgress = (filesSent / totalFiles) * 100;
-            updateProgressBar(transferProgress);
-
-            // Update file list with visual feedback (e.g., checkmark or progress)
-            updateFileListItem(i, 'success'); // Simulate success for now
+                request.onerror = () => {
+                    reject(new Error("Failed to store file in IndexedDB"));
+                };
+            });
         }
 
+        // Function to retrieve file from IndexedDB
+        function retrieveFileFromIndexedDB(fileName) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([objectStoreName], "readonly");
+                const objectStore = transaction.objectStore(objectStoreName);
+                const request = objectStore.get(fileName);
 
-        tl.to(loadingMessage, {
-            opacity: 0,
-            scale: 0.8,
-            duration: 0.5,
-            ease: 'power2.inOut',
-        })
-          .to(fileList, { // Fade out the file list
-              opacity: 0,
-              duration: 0.5,
-          }, "<") // at the same time as loading message fade out
-          .to(fluidBackground, {
-            y: '-150%',
-            scale: 2,
-            opacity: 0,
-            duration: 1.5,
-            ease: 'power2.inOut',
-            onComplete: () => {
-              // Simulate a random success or failure
-              const isSuccess = Math.random() > 0.2;
+                request.onsuccess = () => {
+                    if (request.result) {
+                        resolve(request.result.data);
+                    } else {
+                        reject(new Error("File not found in IndexedDB"));
+                    }
+                };
 
-                if (isSuccess) {
-                    successSound.play();
-                    gsap.to(successMessage, {
-                        opacity: 1,
-                        scale: 1,
-                        duration: 0.5,
-                        ease: 'back.out(1.7)',
-                    });
-                } else {
-                    errorSound.play();
-                    gsap.to(errorMessage, {
-                        opacity: 1,
-                        scale: 1,
-                        duration: 0.5,
-                        ease: 'back.out(1.7)',
-                    });
-                    gsap.to(retryButton, {
-                        opacity: 1,
-                        duration: 0.5,
-                        delay: 0.5,
-                    });
+                request.onerror = () => {
+                    reject(new Error("Failed to retrieve file from IndexedDB"));
+                };
+            });
+        }
+
+        function clearIntervalAllIntervals() {
+            intervals.forEach(interval => clearInterval(interval));
+            intervals = [];
+        }
+
+        // Function to simulate file transfer and update progress
+        function simulateFileTransfer() {
+            if (transferOngoing) return; // Prevent multiple transfers at once
+
+            let currentFileIndex = 0;
+            transferOngoing = true;
+
+            // Create list items for each file
+            transferringList.innerHTML = ''; // Clear previous list
+            selectedFiles.forEach(file => {
+                const listItem = document.createElement("li");
+                listItem.textContent = `Transferring: ${file.name} - 0%`;
+                listItem.id = `transferItem-${file.name.replace(/\W/g, '')}`;  // Create safe ID
+                transferringList.appendChild(listItem);
+
+                // Spring Animation for Transfer List Items
+                gsap.fromTo(listItem, {
+                    opacity: 0,
+                    y: -20,
+                    scale: 0.9
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.6,
+                    ease: "elastic.out(1, 0.75)"
+                });
+            });
+
+            function transferNextFile() {
+                if (currentFileIndex >= selectedFiles.length) {
+                    transferStatus.textContent = "Transfer Complete!";
+                    transferOngoing = false;
+                    setTimeout(() => {
+                        closeTransferPopup();
+                        closeFileSelect();
+                        showMainContainer();
+                    }, 1500);
+                    return;
                 }
-            },
-        }, "+=0.5");  // Add a small delay before transitioning
 
-        tl.then(() => {
-            // Wait for a short period before resetting
-            if (filesSent === totalFiles) {
-                 setTimeout(() => {
-                    resetAnimation();
-                }, 2000);  // Wait 2 seconds before resetting
+                const file = selectedFiles[currentFileIndex];
+                let progress = 0;
+                const interval = setInterval(() => {
+                    intervals.push(interval);
+                    progress += 5; // Simulate progress
+                    progressBar.style.width = progress + "%";
+                    const listItem = document.getElementById(`transferItem-${file.name.replace(/\W/g, '')}`);
+                    if (listItem) {
+                        listItem.textContent = `Transferring: ${file.name} - ${progress}%`;
+                    }
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        intervals = intervals.filter(i => i !== interval); // remove cleared interval
+                        currentFileIndex++;
+                        if (listItem) {
+                            listItem.textContent = `Transferred: ${file.name}`; // Show completed status
+                        }
+
+                        // Store the file in IndexedDB
+                        storeFileInIndexedDB(file)
+                            .then(() => {
+                                console.log(`File "${file.name}" stored in IndexedDB`);
+                            })
+                            .catch(error => {
+                                console.error("Error storing file:", error);
+                            });
+
+                        transferNextFile(); // Start the next file
+                    }
+                }, 100);
             }
-        });
 
-    }
-
-    // Function to update the file list item with status
-    function updateFileListItem(index, status) {
-        const listItem = fileList.querySelector(`ul li:nth-child(${index + 1})`);
-        if (listItem) {
-            let statusIcon = '';
-            switch (status) {
-                case 'success':
-                    statusIcon = '&#10004;'; // Checkmark
-                    break;
-                case 'error':
-                    statusIcon = '&#10060;'; // X Mark
-                    break;
-                case 'progress':
-                    statusIcon = '...';      // Ellipsis
-                    break;
-                default:
-                    statusIcon = '';
-            }
-            listItem.innerHTML = `${filesToTransfer[index]} ${statusIcon}`;
+            transferNextFile();
         }
-    }
 
-    function updateProgressBar(progress) {
-      gsap.to(progressBar, {
-        width: `${progress}%`,
-        duration: 0.3,
-        ease: 'power3.out',
-      });
-    }
+        function cancelTransfer() {
+            transferOngoing = false; // Set flag to stop the transfer
+            clearIntervalAllIntervals();
+            closeTransferPopup();
+            closeFileSelect();
+            showMainContainer();
+        }
 
-    function resetAnimation() {
-        gsap.to([successMessage, errorMessage, retryButton], {
-            opacity: 0,
-            scale: 0.8,
-            duration: 0.5,
-            ease: 'power2.inOut',
-            onComplete: () => {
-                gsap.set(fluidBackground, { clearProps: 'all' });
-                gsap.set(message, { opacity: 1 });
-                gsap.set(progressBar, { width: '0%' }); // Reset progress bar
-                gsap.set(fileList, {opacity: 0});
-                filesToTransfer = [];
-                updateFileList();
-                animateFluid();
-                isAnimating = false;
-            },
+        // Open Transfer Popup Function
+        function openTransferPopup() {
+            hideMainContainer();
+            hideFileSelect();
+            hideReceiveContainer();
+            transferringList.innerHTML = ""; // Clear previous transfer list
+            progressBar.style.width = "0%";
+            transferStatus.textContent = ""; // Clear any previous message
+            transferPopup.classList.add("active");
+        }
+
+        // Close Transfer Popup Function
+        function closeTransferPopup() {
+            transferPopup.classList.remove("active");
+        }
+
+        // Incoming File Alert Function
+        function showIncomingAlert() {
+            incomingAlert.classList.add("active");
+            setTimeout(() => {
+                incomingAlert.classList.remove("active");
+            }, 6000);
+        }
+
+        // Open File Select Container Function
+        function openFileSelect() {
+            hideMainContainer();
+            hideReceiveContainer();
+            hideTransferPopup();
+            fileSelectContainer.classList.add("active");
+        }
+
+        // Close File Select Container Function
+        function closeFileSelect() {
+            fileSelectContainer.classList.remove("active");
+            selectedFiles = [];
+            fileList.innerHTML = "";
+        }
+
+        // Open Receive Container Function
+        function openReceiveContainer() {
+            hideMainContainer();
+            hideFileSelect();
+            hideTransferPopup();
+            receiveContainer.classList.add("active");
+
+            // Simulate receiving a file (replace with actual WebRTC logic)
+            incomingFileMeta = {
+                name: "document.pdf",
+                size: "2.4 MB",
+                type: "application/pdf"
+            };
+
+            // Update UI with incoming file metadata
+            incomingFileNameDisplay.textContent = incomingFileMeta.name;
+            incomingFileSizeDisplay.textContent = incomingFileMeta.size;
+
+            showIncomingAlert();
+        }
+
+        // Close Receive Container Function
+        function closeReceiveContainer() {
+            receiveContainer.classList.remove("active");
+        }
+
+        // Function to Decline Transfer
+        function declineTransfer() {
+            closeReceiveContainer();
+            showMainContainer();
+            incomingFileMeta = null;
+        }
+
+        function showMainContainer() {
+            mainContainer.classList.add("active");
+        }
+
+        function hideMainContainer() {
+            mainContainer.classList.remove("active");
+        }
+
+        function hideFileSelect() {
+            fileSelectContainer.classList.remove("active");
+        }
+
+        function hideReceiveContainer() {
+            receiveContainer.classList.remove("active");
+        }
+
+        function hideTransferPopup() {
+            transferPopup.classList.remove("active");
+        }
+
+        // Handle File Selection
+        function handleFileSelection(event) {
+            selectedFiles = Array.from(event.target.files);
+            renderFileList();
+        }
+
+        // Render File List Function
+        function renderFileList() {
+            fileList.innerHTML = "";
+            selectedFiles.forEach(file => {
+                const listItem = document.createElement("li");
+                listItem.innerHTML = `<i class="fas fa-file file-icon"></i>${file.name} <span class="remove-file" data-name="${file.name}">X</span>`;
+                fileList.appendChild(listItem);
+
+                // Spring Animation for File List Items
+                gsap.fromTo(listItem, {
+                    opacity: 0,
+                    y: -20,
+                    scale: 0.9
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.6,
+                    ease: "elastic.out(1, 0.75)"
+                });
+            });
+        }
+
+        // Remove File from Selection
+        fileList.addEventListener("click", (event) => {
+            if (event.target.classList.contains("remove-file")) {
+                const fileName = event.target.dataset.name;
+                selectedFiles = selectedFiles.filter(file => file.name !== fileName);
+                renderFileList(); // Re-render file list
+            }
         });
-    }
 
-    animateFluid();
+        // Start Sending Files
+        function startSending() {
+            if (selectedFiles.length > 0) {
+                // Check for WebAuthn availability
+                if (window.PublicKeyCredential) {
+                    // Attempt to register or authenticate
+                    registerOrAuthenticate()
+                        .then(() => {
+                            // Proceed with file sending
+                            openTransferPopup();
+                            simulateFileTransfer();
+                            closeFileSelect();
+                        })
+                        .catch((error) => {
+                            console.error("Biometric authentication failed:", error);
+                            alert("Biometric authentication failed. Please try again.");
+                        });
+                } else {
+                    console.warn("WebAuthn not supported in this browser.");
+                    // Fallback mechanism
+                    openTransferPopup();
+                    simulateFileTransfer();
+                    closeFileSelect();
+                }
+            } else {
+                alert("Please select files to send.");
+            }
+        }
 
-    container.addEventListener('click', startTransfer);
-    retryButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resetAnimation();
-    });
-    document.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('deviceorientation', handleDeviceOrientation);
+        // Accept Transfer Function
+        function acceptTransfer() {
+            if (!incomingFileMeta) {
+                alert("No incoming file to accept.");
+                return;
+            }
 
-  </script>
+            closeReceiveContainer();
+            openTransferPopup();
+            simulateFileTransfer(); // Assuming you adapt this for a single incoming file
+        }
+
+        // AI-powered file categorization (basic example)
+        function categorizeFile(fileName) {
+            const lowerCaseName = fileName.toLowerCase();
+            if (lowerCaseName.endsWith(".pdf") || lowerCaseName.endsWith(".doc") || lowerCaseName.endsWith(".docx")) {
+                return "Documents";
+            } else if (lowerCaseName.endsWith(".mp4") || lowerCaseName.endsWith(".mov") || lowerCaseName.endsWith(".avi")) {
+                return "Videos";
+            } else if (lowerCaseName.endsWith(".jpg") || lowerCaseName.endsWith(".jpeg") || lowerCaseName.endsWith(".png")) {
+                return "Images";
+            } else {
+                return "Uncategorized";
+            }
+        }
+
+        // Speech API
+        function startVoiceRecording() {
+            return new Promise((resolve, reject) => {
+                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onresult = (event) => {
+                    const result = event.results[0][0].transcript;
+                    resolve(result);
+                };
+
+                recognition.onerror = (event) => {
+                    reject(new Error("Speech recognition error: " + event.error));
+                };
+
+                recognition.start();
+            });
+        }
+
+        // WebAuthn Registration/Authentication (Simplified)
+        async function registerOrAuthenticate() {
+            // In a real implementation, this would handle both registration and authentication
+            // For simplicity, we'll just simulate authentication success
+            return new Promise((resolve, reject) => {
+                // Simulate a small delay to mimic real-world authentication
+                setTimeout(() => {
+                    // Always resolve as "authenticated" for this demo
+                    resolve({ authenticated: true });
+                }, 500);
+            });
+        }
+
+
+        // GSAP Context for Spring Animations
+        gsap.context(() => {
+
+            // Button Animation
+            gsap.utils.toArray(".button").forEach(button => {
+                button.addEventListener("click", () => {
+                    navigator.vibrate([50]); // Haptic Feedback on Click
+
+                    gsap.to(button, {
+                        duration: 0.5,
+                        scale: 1.1,
+                        yoyo: true,
+                        repeat: 1,
+                        ease: "elastic.out(1, 0.5)"
+                    });
+                });
+            });
+
+            // Container Entrance Animation (on becoming active)
+            const containers = [mainContainer, fileSelectContainer, receiveContainer, transferPopup];
+            containers.forEach(container => {
+                let config = {
+                    x: () => Math.random() > 0.5 ? 100 : -100,
+                    y: () => Math.random() > 0.5 ? 50 : -50,
+                    duration: 1.2,
+                    opacity: 0,
+                    ease: "elastic.out(1, 0.75)",
+                    stagger: 0.1
+                }
+                gsap.from(container, config);
+            });
+
+        });
+
+        // ********** WebRTC Implementation **********
+
+        // Helper Function to Convert File to ArrayBuffer
+        function fileToArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Initialize WebRTC Peer
+        function initializePeer() {
+            initiator = true; // Assume sender initiates connection
+            peer = new SimplePeer({ initiator: initiator, trickle: false });
+
+            peer.on('signal', data => {
+                // Normally exchange signals with other peer using a signaling server
+                console.log('SIGNAL', JSON.stringify(data))
+            })
+
+            peer.on('connect', () => {
+                console.log('CONNECT');
+            });
+
+            peer.on('data', data => {
+                receivedFileData.push(data);
+                console.log('RECV: ' + data);
+            })
+
+            peer.on('stream', stream => {
+                // got remote video stream, now let's show it in a video tag
+                console.log('got remote stream')
+                // If it's needed to add remote streams
+                // var video = document.querySelector('video')
+                // video.srcObject = stream
+                // video.onloadedmetadata = function () {
+                // video.play()
+                // }
+            })
+
+            peer.on('close', () => {
+                console.log("Peer Connection Closed");
+                peer.destroy();
+            });
+        }
+
+        // Function to Start WebRTC File Transfer
+        async function startWebRTCFileTransfer(files) {
+            if (!peer) {
+                initializePeer();
+            }
+
+            for (const file of files) {
+                const arrayBuffer = await fileToArrayBuffer(file);
+                const chunkSize = 16384; // 16KB
+                for (let i = 0; i < arrayBuffer.byteLength; i += chunkSize) {
+                    const chunk = arrayBuffer.slice(i, i + chunkSize);
+                    peer.send(chunk);
+                }
+                peer.send("__END_OF_FILE__");
+                console.log(`File ${file.name} sent.`);
+            }
+        }
+
+    </script>
 </body>
+
 </html>
